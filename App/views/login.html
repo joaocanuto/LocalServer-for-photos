@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <!-- AXIOS -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+  </head>
+  <body>
+    <h1>Login</h1>
+    <div id="App">
+      <label for="phone">Telefone:</label>
+      <input type="text" id="phone" name="phone" required />
+      <button onclick="Logar()">Entrar</button>
+    </div>
+  </body>
+</html>
+
+<script type="text/javascript">
+  function Logar() {
+    const phone = document.getElementById("phone");
+    phone.addEventListener("input", (e) => {
+      const { value } = e.target;
+      const phoneRegex = /^(\d{2})(\d{5})(\d{4})$/;
+      const phoneMask = value.replace(phoneRegex, "($1) $2-$3");
+    });
+
+    axios.post("api/logar", { phone: phone.value }).then((res) => {
+      window.location.href = "/upload";
+    }).catch((err) => {
+      window.location.href = "/cadastro?phone=" + phone.value;
+    });
+  }
+</script>

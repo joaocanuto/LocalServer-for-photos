@@ -1,118 +1,52 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const db_path = "db/db.json"
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 
+// CONTROLLERS.
+const Logar = require('./Controllers/Logar');
+// const Logado = require('./Controllers/Logado');
+// const Logout = require('./Controllers/Logout');
+const Cadastrar = require('./Controllers/Cadastrar');
+
+// APP 
 const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+app.use(cookieParser());
+app.use('/Pages', express.static(__dirname + '/Pages'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-// Verifica se a pasta "uploads" existe e a cria, se necessário
-const uploadsFolderPath = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsFolderPath)) {
-  fs.mkdirSync(uploadsFolderPath);
-}
 
-// Configuração do Multer para lidar com o upload de arquivos
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const fileName = `${Date.now()}-${file.originalname}`;
-    cb(null, fileName);
-  }
-});
+// DATABASE
 
-const upload = multer({ storage: storage });
 
-// Rota para servir a página inicial e login
+// PAGES
 app.get('/', (req, res) => {
-if (!fs.existsSync(uploadsFolderPath)) {
-    fs.mkdirSync(uploadsFolderPath);
-    }
-
-  res.sendFile(path.join(__dirname, 'views/login.html'));
-});
-
-// Post do login
-app.post('/login', (req, res) => {
-  const {phone} = req.body;
-
-  const dbData = fs.readFileSync(db_path, 'utf8');
-  const clients = JSON.parse(dbData);
-
-  const client = clients.find(client => client.phone === phone);
-
-  if (client) {
-    res.redirect('/upload');
-  } else {
-    res.redirect('/register');
+  if (req.cookies.Token) {
+    return res.redirect('/upload');
   }
+  res.sendFile(__dirname + '/views/login.html')
+});
+app.get('/cadastro', (req, res) => res.sendFile(__dirname + '/views/cadastro.html'));
+
+// Only Logged Users
+app.get('/upload', (req, res) => res.sendFile(__dirname + '/views/upload.html'));
+
+// ROUTES.
+
+app.post('/api/logar', async (req, res) =>{
+  res.send(await Logar(req.body,res));
 });
 
-// Rota para servir a página de registro
-app.get('/register', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views/register.html'));
+app.get('/api/deslogar', async (req, res) => {
+  res.send(await Deslogar());
 });
 
-// Post do registro
-app.post('/register', (req, res) => {
-  const {name} = req.body;
-  const phone = req.query.body;
-
-  const dbData = fs.readFileSync(db_path, 'utf8');
-  const clients = JSON.parse(dbData);
-
-  const newCliente = { name , phone };
-  clients.push(newCliente);
-
-  fs.writeFileSync(db_path, JSON.stringify(clients));
-
-  res.redirect('/upload');
+app.post('/api/cadastrar', async (req, res) => {
+  res.send(await Cadastrar(req.body));
 });
-
-
-// Rota para servir a página de upload
-app.get('/upload', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views/upload.html'));
-});
-
-// Rota para processar o formulário e os arquivos enviados
-app.post('/upload', upload.array('photos', 1000), (req, res) => {
-  const { phone } = req.body;
-  console.log(req)
-
-  const dbData = fs.readFileSync(db_path, 'utf8');
-  const clients = JSON.parse(dbData);
-
-  const client = clients.find(client => client.phone === phone);
-
-  if (!client) {
-    res.redirect('/login');
-    return;
-  }
-
-
-  const files = req.files;
-
-  // Cria a pasta com o nome do cliente se não existir
-  const clientFolderPath = path.join(uploadsFolderPath, phone);
-  if (!fs.existsSync(clientFolderPath)) {
-    fs.mkdirSync(clientFolderPath);
-  }
-
-  // Move os arquivos para a pasta do cliente
-  files.forEach(file => {
-    const filePath = path.join(clientFolderPath, file.filename);
-    fs.renameSync(file.path, filePath);
-  });
-
-  res.send('Pedido recebido e fotos enviadas com sucesso!');
-});
-
-// Configuração para servir os arquivos estáticos da pasta "uploads"
-app.use('/uploads', express.static('uploads'));
 
 // Inicie o servidor na porta 3000 (você pode alterar a porta se necessário)
 app.listen(3000, () => {

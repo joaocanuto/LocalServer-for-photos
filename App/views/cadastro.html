@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro</title>
+      <!-- AXIOS -->
+      <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <h1>Registro</h1>
+    <div>
+      <label for="name">Nome:</label>
+      <input type="text" id="name" name="name" required />
+      <label for="phone">Phone</label>
+      <input type="text" id="phone" name="phone" required />
+      <button  onclick="Cadastrar()">Registrar</button>
+    </div>
+  </body>
+</html>
+
+<script>
+  // The parameter phone is on the query string
+  const urlParams = new URLSearchParams(window.location.search);
+  const phone = urlParams.get("phone");
+  if (phone) {
+    // The phone input is filled with the phone parameter
+    document.getElementById("phone").value = phone;
+  }
+  function Cadastrar() {
+    const name = document.getElementById("name");
+    name.addEventListener("input", (e) => {
+      const { value } = e.target;
+      const nameRegex = /^(\w{1,})\s(\w{1,})$/;
+      const nameMask = value.replace(nameRegex, "$1 $2");
+      name.value = nameMask;
+    });
+
+    // The form is submitted
+    axios.post('api/cadastrar', {
+      name: name.value,
+      phone: phone
+    }).then((res) => {
+      console.log(res.data)
+      if (res.data.erro) {
+        return alert(res.data.erro);
+      } else {
+        return alert(res.data.erro);
+      }
+    }).catch((err) => {
+      return alert(res.data.erro);
+    });
+  }
+</script>
